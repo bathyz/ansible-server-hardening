@@ -1,0 +1,60 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install security packages
+  apt:
+    name:
+      - ufw
+      - fail2ban
+      - unattended-upgrades
+    state: present
+
+- name: Allow SSH through the firewall
+  ufw:
+    rule: allow
+    name: OpenSSH
+
+- name: Allow HTTP through the firewall
+  ufw:
+    rule: allow
+    port: "80"
+    proto: tcp
+
+- name: Allow HTTPS through the firewall
+  ufw:
+    rule: allow
+    port: "443"
+    proto: tcp
+
+- name: Set default deny incoming policy
+  ufw:
+    direction: incoming
+    policy: deny
+
+- name: Set default allow outgoing policy
+  ufw:
+    direction: outgoing
+    policy: allow
+
+- name: Enable ufw
+  ufw:
+    state: enabled
+
+- name: Ensure fail2ban is running and enabled
+  service:
+    name: fail2ban
+    state: started
+    enabled: true
+
+- name: Enable unattended security upgrades
+  copy:
+    dest: /etc/apt/apt.conf.d/51unattended-upgrades-custom
+    content: |
+      Unattended-Upgrade::Allowed-Origins {
+          "${distro_id}:${distro_codename}-security";
+      };
+      Unattended-Upgrade::Remove-Unused-Dependencies "true";
+    mode: "0644"
